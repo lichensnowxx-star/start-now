@@ -161,7 +161,7 @@ export default function Progress() {
   }
 
   const startNewGoal = () => {
-    if (workflow && allDone) {
+    if (workflow && allDone && !workflow.isDemo) {
       const total = workflow.stages.reduce((sum, stage) => sum + stage.options.length, 0)
       const archiveItem: GoalArchiveItem = {
         id: `${Date.now()}`,
@@ -185,6 +185,9 @@ export default function Progress() {
       <p className="mt-3 text-text/80">
         阶段进度 {Math.min(stageDoneAfterComplete, stageTotalCount)}/{stageTotalCount} · 整体进度 {percent}%
       </p>
+      {workflow?.isDemo && (
+        <p className="mt-2 text-sm text-primary/90">演示模式 · 进度与庆祝都是真实的交互感，不会写入你的成长档案哦。</p>
+      )}
 
       <section className="mt-8 flex-1 grid content-center gap-6">
         <div className="grid gap-6 rounded-[24px] bg-white p-6 shadow-soft md:grid-cols-2">
@@ -241,7 +244,7 @@ export default function Progress() {
           {allDone ? (
             <>
               <Button className="py-4 text-lg" onClick={startNewGoal}>
-                开始新的目标
+                {workflow?.isDemo ? '演示结束，去定制我的目标' : '开始新的目标'}
               </Button>
               <Button className="py-4 text-lg" variant="secondary" onClick={() => navigate('/')}>
                 回到首页

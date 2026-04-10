@@ -6,12 +6,15 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode
   variant?: Variant
   loading?: boolean
+  /** loading 为 true 时显示；不传则沿用默认「加载中...」 */
+  loadingText?: string
 }
 
 export default function Button({
   children,
   variant = 'primary',
   loading = false,
+  loadingText,
   disabled = false,
   className = '',
   ...props
@@ -30,7 +33,7 @@ export default function Button({
       disabled={disabled || loading}
       {...props}
     >
-      {loading ? '加载中...' : children}
+      {loading ? (loadingText ?? '加载中...') : children}
     </button>
   )
 }

@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
+import GeneratingDots from '../components/GeneratingDots'
 import Input from '../components/Input'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { generateWorkflow } from '../utils/api'
@@ -18,7 +19,17 @@ export default function GoalInput() {
     context: '',
   })
   const [loading, setLoading] = useState(false)
+  const [showSlowHint, setShowSlowHint] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!loading) {
+      setShowSlowHint(false)
+      return
+    }
+    const id = window.setTimeout(() => setShowSlowHint(true), 8000)
+    return () => clearTimeout(id)
+  }, [loading])
 
   const canSubmit = draft.goal.trim().length > 0
 
@@ -66,8 +77,26 @@ export default function GoalInput() {
         )}
         {!!error && <p className="mt-4 text-sm text-red-500">{error}</p>}
 
+        {loading && (
+          <div className="mt-6 rounded-xl bg-cream/80 px-4 py-3 text-sm leading-relaxed text-text/80">
+            <p>先别急，我正在把这个目标变成更容易开始的几步。</p>
+            <p className="mt-1.5 flex flex-wrap items-center gap-2">
+              <span>我会先帮你找一个眼下就能开始的起点</span>
+              <GeneratingDots />
+            </p>
+            {showSlowHint && (
+              <p className="mt-2 text-text/65">快好了，再等我一下。若稍久也没事，我还在认真整理。</p>
+            )}
+          </div>
+        )}
+
         <div className="mt-8">
-          <Button type="submit" disabled={!canSubmit} loading={loading}>
+          <Button
+            type="submit"
+            disabled={!canSubmit || loading}
+            loading={loading}
+            loadingText="正在帮你找一个可开始的起点…"
+          >
             帮我找第一步
           </Button>
         </div>

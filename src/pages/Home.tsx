@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
+import VideoDemoModal from '../components/VideoDemoModal'
 
 export default function Home() {
   const navigate = useNavigate()
+  const [demoOpen, setDemoOpen] = useState(false)
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-76px)] w-full max-w-5xl flex-col px-6 py-10 md:py-14">
@@ -16,10 +19,12 @@ export default function Home() {
         <Button className="py-4 text-lg md:text-xl" onClick={() => navigate('/goal')}>
           开始行动
         </Button>
-        <Button className="py-4 text-lg md:text-xl" variant="secondary" onClick={() => navigate('/goal')}>
+        <Button className="py-4 text-lg md:text-xl" variant="secondary" onClick={() => setDemoOpen(true)}>
           查看演示
         </Button>
       </section>
+
+      <VideoDemoModal open={demoOpen} onClose={() => setDemoOpen(false)} />
     </main>
   )
 }

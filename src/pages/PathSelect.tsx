@@ -44,9 +44,17 @@ export default function PathSelect() {
   return (
     <main className="mx-auto flex min-h-[calc(100vh-76px)] w-full max-w-6xl flex-col px-6 py-10 md:py-14">
       <h1 className="text-3xl font-bold md:text-4xl">选择你的第一步</h1>
+      {workflow?.isDemo && workflow.goalTitle && (
+        <p className="mt-3 text-sm font-medium text-primary">演示方向 · {workflow.goalTitle}</p>
+      )}
       <p className="mt-3 text-text/80">
         {currentStage ? `${currentStage.title} · 已完成 ${completedInStage}/${stageOptions.length}` : '请先输入目标生成行动路径。'}
       </p>
+      {workflow?.isDemo && (
+        <p className="mt-3 rounded-2xl bg-primary/10 px-4 py-3 text-sm leading-relaxed text-text/80">
+          这是一条为你备好的演示路线，不用有压力，随便点点感受节奏就好。准备认真开始时，回到首页点「开始行动」输入你自己的目标就行。
+        </p>
+      )}
 
       <section className="flex flex-1 items-center py-8">
         <div className="w-full grid gap-6 md:grid-cols-3">

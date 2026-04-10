@@ -1,4 +1,104 @@
 import type { PathOption, Stage, WorkflowState } from '../types'
+import { optionTextPassesQuality, stageTitlePassesQuality } from '../../shared/optionQuality'
+
+/** options 尚无 id，由 stagesFromAiPayload 补齐 */
+type StageDraft = { title: string; options: Omit<PathOption, 'id'>[] }
+
+function parseOptionalField(x: Record<string, unknown>, key: string): string | undefined {
+  const v = x[key]
+  if (typeof v !== 'string') return undefined
+  const t = v.trim()
+  return t.length > 0 ? t : undefined
+}
+
+function parseOption(o: unknown): Omit<PathOption, 'id'> | null {
+  if (!o || typeof o !== 'object') return null
+  const x = o as Record<string, unknown>
+  if (typeof x.title !== 'string' || typeof x.duration !== 'string' || !Array.isArray(x.steps)) {
+    return null
+  }
+  const reason = typeof x.reason === 'string' ? x.reason.trim() : ''
+  const legacyDesc = typeof x.desc === 'string' ? x.desc.trim() : ''
+  const desc = reason || legacyDesc
+  if (!desc) return null
+  const stepsRaw = x.steps.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+  if (stepsRaw.length !== 3) return null
+  const steps = stepsRaw.map((s) => s.trim())
+  const title = x.title.trim()
+  const duration = x.duration.trim()
+  if (!optionTextPassesQuality(title, desc, steps)) return null
+  return {
+    title,
+    desc,
+    duration,
+    steps,
+    firstAction: parseOptionalField(x, 'firstAction'),
+    outcome: parseOptionalField(x, 'outcome'),
+  }
+}
+
+/** 校验 API 返回的 stages，失败则整体放弃 AI 结果、回退 mock */
+function parseAiStagesPayload(data: unknown): StageDraft[] | null {
+  if (!data || typeof data !== 'object') return null
+  const stages = (data as { stages?: unknown }).stages
+  if (!Array.isArray(stages) || stages.length !== 3) return null
+  const out: StageDraft[] = []
+  for (const st of stages) {
+    if (!st || typeof st !== 'object') return null
+    const title = (st as Record<string, unknown>).title
+    if (typeof title !== 'string' || !title.trim()) return null
+    if (!stageTitlePassesQuality(title)) return null
+    const opts = (st as Record<string, unknown>).options
+    if (!Array.isArray(opts) || opts.length !== 3) return null
+    const options: Omit<PathOption, 'id'>[] = []
+    for (const o of opts) {
+      const p = parseOption(o)
+      if (!p) return null
+      options.push(p)
+    }
+    out.push({ title: title.trim(), options })
+  }
+  return out
+}
+
+function stagesFromAiPayload(raw: StageDraft[]): Stage[] {
+  return raw.map((stage, stageIndex) => ({
+    id: `stage-${stageIndex + 1}`,
+    title: stage.title,
+    options: stage.options.map((option, optionIndex) => ({
+      ...option,
+      id: `stage-${stageIndex + 1}-task-${optionIndex + 1}`,
+    })),
+  }))
+}
+
+async function fetchAiWorkflowStages(goal: string, context: string): Promise<Stage[] | null> {
+  try {
+    const res = await fetch('/api/generate-steps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ goal, context }),
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    const parsed = parseAiStagesPayload(data)
+    if (!parsed) return null
+    return stagesFromAiPayload(parsed)
+  } catch {
+    return null
+  }
+}
+
+function stagesFromTemplates(): Stage[] {
+  return stageTemplates.map((stage, stageIndex) => ({
+    id: `stage-${stageIndex + 1}`,
+    title: stage.title,
+    options: stage.options.map((option, optionIndex) => ({
+      ...option,
+      id: `stage-${stageIndex + 1}-task-${optionIndex + 1}`,
+    })),
+  }))
+}
 
 const stageTemplates: {
   title: string
@@ -76,16 +176,8 @@ const stageTemplates: {
 ]
 
 export async function generateWorkflow(goalTitle: string, goalContext: string): Promise<WorkflowState> {
-  await new Promise((resolve) => setTimeout(resolve, 900))
-
-  const stages: Stage[] = stageTemplates.map((stage, stageIndex) => ({
-    id: `stage-${stageIndex + 1}`,
-    title: stage.title,
-    options: stage.options.map((option, optionIndex) => ({
-      ...option,
-      id: `stage-${stageIndex + 1}-task-${optionIndex + 1}`,
-    })),
-  }))
+  const aiStages = await fetchAiWorkflowStages(goalTitle, goalContext)
+  const stages = aiStages && aiStages.length === 3 ? aiStages : stagesFromTemplates()
 
   return {
     stages,

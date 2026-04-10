@@ -27,6 +27,20 @@ export default {
           'sans-serif',
         ],
       },
+      keyframes: {
+        modalBackdropIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        modalPanelIn: {
+          '0%': { opacity: '0', transform: 'scale(0.96) translateY(8px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
+      },
+      animation: {
+        'modal-backdrop': 'modalBackdropIn 0.2s ease-out forwards',
+        'modal-panel': 'modalPanelIn 0.22s ease-out forwards',
+      },
     },
   },
   plugins: [],
