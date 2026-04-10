@@ -3,7 +3,7 @@
  * 仅供 api 路由与 Vite dev 中间件引用，勿打包进浏览器。
  */
 
-import { optionTextPassesQuality, stageTitlePassesQuality } from '../shared/optionQuality'
+import { optionTextPassesQuality, stageTitlePassesQuality } from '../shared/optionQuality.js'
 
 export interface RawOption {
   title: string
